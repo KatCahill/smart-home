@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+service HeatingService {
+  rpc AdjustTemperature (TemperatureRequest) returns (TemperatureResponse);
+  rpc GetRoomTemperatures (RoomRequest) returns (stream RoomTemperature);
+}
+
+message TemperatureRequest {
+  double temperature = 1;
+}
+
+message TemperatureResponse {
+  string status = 1;
+}
+
+message RoomRequest {
+  // No request parameters needed in this example
+}
+
+message RoomTemperature {
+  string roomId = 1;
+  double temperature = 2;
+}
