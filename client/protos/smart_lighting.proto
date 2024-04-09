@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package lighting;
+
+service LightingService {
+  rpc setLighting(stream LightingProfile) returns (LightResponse);
+}
+
+message LightingProfile {
+  string profileId = 1;
+  float brightness = 2;
+}
+
+message LightResponse {
+  string status = 1;
+}

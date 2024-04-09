@@ -1,26 +1,38 @@
 const grpc = require('@grpc/grpc-js');
 const protoLoader = require('@grpc/proto-loader');
-const PROTO_PATH = __dirname + "/protos/smart_heating.proto";
 
-// Load the Protocol Buffer file
-const packageDefinition = protoLoader.loadSync(PROTO_PATH);
-const protoDescriptor = grpc.loadPackageDefinition(packageDefinition);
-const { HeatingService } = protoDescriptor;
+// Load Smart Heating Protocol Buffer file
+const heatingProtoPath = __dirname + "/protos/smart_heating.proto";
 
-// Implement the gRPC service methods
+//load proto file
+const heatingPackageDefinition = protoLoader.loadSync(heatingProtoPath);
+const smart_heating = grpc.loadPackageDefinition(heatingPackageDefinition).heating
+
+// Implement the gRPC service methods for smart heating
 const adjustTemperature = (call, callback) => {
   const temperature = call.request.temperature;
-  // Your logic to adjust the temperature goes here
-  const status = `Temperature adjusted to ${temperature}°C`;
-  callback(null, { status });
+  //error handling
+  if (isNaN(temperature)) {
+    console.error('Invalid temperature value. Please enter a valid numeric value for the temperature in °C.');
+    callback('Invalid temperature value', null); // Pass an error message to the callback
+    return;
+}
+
+  // Simulate adjusting temperature (for demonstration purposes)
+  console.log(`Adjusting temperature to ${temperature}°C`);
+  callback(null, { status: `Temperature adjusted successfully to ${temperature}°C` });
+
 };
 
 const getRoomTemperatures = (call) => {
   // Simulated room temperatures with room IDs
   const roomTemperatures = [
     { roomId: 'Living Room', temperature: 22.5 },
-    { roomId: 'Bedroom', temperature: 20.3 },
-    { roomId: 'Kitchen', temperature: 23.8 }
+    { roomId: 'Bedroom 1', temperature: 20.3 },
+    { roomId: 'Bedroom 2', temperature: 22.8 },
+    { roomId: 'Bedroom 3', temperature: 23.6 },
+    { roomId: 'Kitchen', temperature: 23.8 },
+    { roomId: 'Sitting Room', temperature: 23.7}
   ];
 
   roomTemperatures.forEach(roomTemperature => {
@@ -32,20 +44,13 @@ const getRoomTemperatures = (call) => {
 };
 
 
-// Create a gRPC server
+// make a new gRPC server
 const server = new grpc.Server();
 
-// Add the service and its implementations to the server
-server.addService(HeatingService.service, { adjustTemperature, getRoomTemperatures });
+// Add the service and implementations to the server
+server.addService(smart_heating.HeatingService.service, { adjustTemperature, getRoomTemperatures });
 
-// Bind the server to the specified port and start it
-const port = "0.0.0.0:40000";
-server.bindAsync(port, grpc.ServerCredentials.createInsecure(), (err, port) => {
-  if (err) {
-    console.error(`Failed to bind server to port ${port}: ${err}`);
-    return;
-  }
-  console.log(`Server running at ${port}`);
-  // Start the server
+//callback function for the bindAsync method to start the server after binding
+server.bindAsync("0.0.0.0:40000", grpc.ServerCredentials.createInsecure(), () => {
   server.start();
 });

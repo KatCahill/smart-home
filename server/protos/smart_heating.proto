@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package heating;
+
 service HeatingService {
   rpc AdjustTemperature (TemperatureRequest) returns (TemperatureResponse);
   rpc GetRoomTemperatures (RoomRequest) returns (stream RoomTemperature);
