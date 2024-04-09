@@ -8,6 +8,14 @@ const heatingProtoPath = __dirname + "/protos/smart_heating.proto";
 const heatingPackageDefinition = protoLoader.loadSync(heatingProtoPath);
 const smart_heating = grpc.loadPackageDefinition(heatingPackageDefinition).heating
 
+// Load Smart Lighting Protocol Buffer file
+const lightingProtoPath = __dirname + "/protos/smart_lighting.proto";
+
+//load proto file
+const lightingPackageDefinition = protoLoader.loadSync(lightingProtoPath);
+const smart_lighting = grpc.loadPackageDefinition(lightingPackageDefinition).lighting
+
+
 // Implement the gRPC service methods for smart heating
 const adjustTemperature = (call, callback) => {
   const temperature = call.request.temperature;
