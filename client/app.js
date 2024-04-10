@@ -18,11 +18,12 @@ const smart_lighting = grpc.loadPackageDefinition(lightingPackageDefinition);
 // Extract the LightingService from the loaded package definition
 const LightingService = smart_lighting.lighting.LightingService;
 
-// Create a gRPC client for Smart Lighting service
-const lightingClient = new LightingService("localhost:40000", grpc.credentials.createInsecure());
 
 // Create a gRPC client for Smart Heating service
 const heatingClient = new HeatingService("localhost:40000", grpc.credentials.createInsecure());
+
+// Create a gRPC client for Smart Lighting service
+const lightingClient = new LightingService("localhost:40000", grpc.credentials.createInsecure());
 
 function adjustTemperature() {
   const input = readlineSync.question('Enter the desired temperature in °C: ');
@@ -64,6 +65,16 @@ function getRoomTemperatures() {
     console.log('Server stream ended');
     menu();
   });
+}
+
+// Function to set lighting profiles
+function setLighting() {
+  const profileId = readlineSync.question('Enter the lighting profile ID: ');
+  const brightnessLevel = parseFloat(readlineSync.question('Enter the desired brightness level: '));
+
+  // Send lighting profile data to the server
+  call.write({ profileId, brightness: brightnessLevel });
+  call.end(); // End the stream
 }
 
 

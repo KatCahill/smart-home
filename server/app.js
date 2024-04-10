@@ -15,7 +15,6 @@ const lightingProtoPath = __dirname + "/protos/smart_lighting.proto";
 const lightingPackageDefinition = protoLoader.loadSync(lightingProtoPath);
 const smart_lighting = grpc.loadPackageDefinition(lightingPackageDefinition).lighting
 
-
 // Implement the gRPC service methods for smart heating
 const adjustTemperature = (call, callback) => {
   const temperature = call.request.temperature;
@@ -35,7 +34,7 @@ const adjustTemperature = (call, callback) => {
 const getRoomTemperatures = (call) => {
   // Simulated room temperatures with room IDs
   const roomTemperatures = [
-    { roomId: 'Living Room', temperature: 22.5 },
+    { roomId: 'Dining Area', temperature: 22.5 },
     { roomId: 'Bedroom 1', temperature: 20.3 },
     { roomId: 'Bedroom 2', temperature: 22.8 },
     { roomId: 'Bedroom 3', temperature: 23.6 },
@@ -51,12 +50,31 @@ const getRoomTemperatures = (call) => {
   call.end(); // Close the stream
 };
 
+// Implement the gRPC service methods for smart lighting
+const setLighting = (call, callback) => {
+  let brightness = 0;
+  let lightingProfile = ''; // Store lighting profile ID
+
+  call.on('data', (profile) => {
+    console.log(`Adjusting lighting profile ${profile.profileId} with brightness ${profile.brightness}`);
+    brightness = profile.brightness;
+    lightingProfile = profile.profileId; // Update lighting profile ID
+  });
+
+  call.on('end', () => {
+    console.log('Client stream ended');
+    // Send response to client including lighting profile
+    callback(null, { status: brightness, profileId: lightingProfile });
+  });
+};
+
 
 // make a new gRPC server
 const server = new grpc.Server();
 
 // Add the service and implementations to the server
 server.addService(smart_heating.HeatingService.service, { adjustTemperature, getRoomTemperatures });
+server.addService(smart_lighting.LightingService.service, { setLighting });
 
 //callback function for the bindAsync method to start the server after binding
 server.bindAsync("0.0.0.0:40000", grpc.ServerCredentials.createInsecure(), () => {
