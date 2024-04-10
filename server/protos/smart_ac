@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package aircondition;
+
+service SmartACService {
+  rpc StreamSensorData(stream SensorData) returns (stream ACControl);
+}
+
+message SensorData {
+  float temperature = 1;
+  float humidity = 2;
+  // Other sensor data fields may be added
+}
+
+message ACControl {
+  float temperatureSetpoint = 1;
+  bool powerOn = 2;

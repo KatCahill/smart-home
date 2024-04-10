@@ -18,6 +18,13 @@ const smart_lighting = grpc.loadPackageDefinition(lightingPackageDefinition);
 // Extract the LightingService from the loaded package definition
 const LightingService = smart_lighting.lighting.LightingService;
 
+// Load the Protocol Buffer file for Smart AC
+const airconditioningProtoPath = __dirname + "/protos/smart_ac.proto";
+const airconditioningPackageDefinition = protoloader.loadSync(airconditioningProtoPath);
+const smart_ac = grpc.loadPackageDefinition(airconditioningPackageDefinition).aircondition
+
+// Extract the AirconditioningService from the loaded package definition
+const SmartACService = smart_ac.aircondition.SmartACService;
 
 // Create a gRPC client for Smart Heating service
 const heatingClient = new HeatingService("localhost:40000", grpc.credentials.createInsecure());
@@ -72,10 +79,21 @@ function setLighting() {
   const profileId = readlineSync.question('Enter the lighting profile ID: ');
   const brightnessLevel = parseFloat(readlineSync.question('Enter the desired brightness level: '));
 
+  const call = lightingClient.setLighting((error, response) => {
+    if (error) {
+      console.error('Error:', error.message);
+    } else {
+      console.log(`Status: Brightness set to ${response.status}, Lighting profile set to ${profileId}`); // Moved inside the callback function
+      menu();
+    }
+  });
+
   // Send lighting profile data to the server
   call.write({ profileId, brightness: brightnessLevel });
   call.end(); // End the stream
 }
+
+
 
 
 // Main menu function

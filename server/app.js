@@ -1,19 +1,26 @@
 const grpc = require('@grpc/grpc-js');
 const protoLoader = require('@grpc/proto-loader');
 
-// Load Smart Heating Protocol Buffer file
+// Load Smart Heating Protocol Buffer File
 const heatingProtoPath = __dirname + "/protos/smart_heating.proto";
 
-//load proto file
+//Load proto file
 const heatingPackageDefinition = protoLoader.loadSync(heatingProtoPath);
 const smart_heating = grpc.loadPackageDefinition(heatingPackageDefinition).heating
 
-// Load Smart Lighting Protocol Buffer file
+// Load Smart Lighting Protocol Buffer File
 const lightingProtoPath = __dirname + "/protos/smart_lighting.proto";
 
-//load proto file
+//load proto File
 const lightingPackageDefinition = protoLoader.loadSync(lightingProtoPath);
 const smart_lighting = grpc.loadPackageDefinition(lightingPackageDefinition).lighting
+
+// Load Smart AC Protocol Buffer File
+const airconditioningProtoPath = __dirname + "/protos/smart_ac.proto";
+
+//Load proto File
+const airconditioningPackageDefinition = protoloader.loadSync(airconditioningProtoPath);
+const smart_ac = grpc.loadPackageDefinition(airconditioningPackageDefinition).aircondition
 
 // Implement the gRPC service methods for smart heating
 const adjustTemperature = (call, callback) => {
@@ -34,7 +41,7 @@ const adjustTemperature = (call, callback) => {
 const getRoomTemperatures = (call) => {
   // Simulated room temperatures with room IDs
   const roomTemperatures = [
-    { roomId: 'Dining Area', temperature: 22.5 },
+    { roomId: 'Dining Room', temperature: 22.5 },
     { roomId: 'Bedroom 1', temperature: 20.3 },
     { roomId: 'Bedroom 2', temperature: 22.8 },
     { roomId: 'Bedroom 3', temperature: 23.6 },
@@ -61,6 +68,11 @@ const setLighting = (call, callback) => {
     lightingProfile = profile.profileId; // Update lighting profile ID
   });
 
+  call.on('error', (error) => {
+    console.error('Error:', error.message);
+    callback(error); // Send error to client
+  });
+
   call.on('end', () => {
     console.log('Client stream ended');
     // Send response to client including lighting profile
@@ -69,7 +81,7 @@ const setLighting = (call, callback) => {
 };
 
 
-// make a new gRPC server
+// Make a new gRPC server
 const server = new grpc.Server();
 
 // Add the service and implementations to the server
