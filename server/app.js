@@ -83,6 +83,9 @@ const setLighting = (call, callback) => {
   });
 };
 
+
+
+
 function streamSecurityEvents(call) {
   let deviceId; // Define deviceId variable outside the event handler
 

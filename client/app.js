@@ -144,6 +144,26 @@ function streamSecurityEvents(deviceId) {
 
   // Start sending security events
   startSendingEvents();
+  // Stop streaming after 10 seconds
+    setTimeout(() => {
+      stopStreaming();
+    }, 10000);
+
+    // Function to stop streaming security events
+    function stopStreaming() {
+      clearInterval(intervalId); // Stop the interval
+      call.end(); // End the streaming
+      console.log('Streaming stopped after 10 seconds');
+      // Call the menu function again after streaming has stopped
+      menu();
+    }
+
+    // Listen for the 'end' event from the client to stop streaming
+    call.on('end', stopStreaming);
+
+
+
+
 }
 
 // Start the menu
