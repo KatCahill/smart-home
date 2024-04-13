@@ -32,7 +32,6 @@ const lightingClient = new LightingService("localhost:40000", grpc.credentials.c
 
 const client = new SecurityService('localhost:40000', grpc.credentials.createInsecure());
 
-
 // Define client-side functions
 function adjustTemperature() {
   const input = readlineSync.question('Enter the desired temperature in °C: ');
@@ -88,16 +87,42 @@ function setLighting() {
   call.end();
 }
 
+// Main menu function
+async function menu() {
+  console.log("\n1. Adjust Temperature\n2. Get Room Temperatures\n3. Adjust Lighting Profile\n4. Stream Sensor Data to AC\n5. Exit");
+  const choice = parseInt(readlineSync.question('Enter your choice: '));
 
+  switch (choice) {
+    case 1:
+      adjustTemperature();
+      break;
+    case 2:
+      getRoomTemperatures();
+      break;
+    case 3:
+      setLighting();
+      break;
+    case 4:
+      // Prompt the user to enter the device ID when choosing to stream security events
+      const deviceId = readlineSync.question('Enter the device ID: ');
+      streamSecurityEvents(deviceId);
+      break;
+    case 5:
+      process.exit();
+      break;
+    default:
+      console.log("Invalid choice. Please enter a number between 1 and 5.");
+      await menu(); // Using await to wait for the asynchronous menu function call
+  }
+}
 
-//client side code
+// Function to stream security events
 function streamSecurityEvents(deviceId) {
   const call = client.streamSecurityEvents();
   let intervalId;
 
   // Function to start sending security events
   function startSendingEvents() {
-
     intervalId = setInterval(() => {
       const eventType = 'Motion Detected';
       const description = 'Motion detected in the backyard';
@@ -121,40 +146,5 @@ function streamSecurityEvents(deviceId) {
   startSendingEvents();
 }
 
-// Prompt the user to enter the device ID
-const deviceId = readlineSync.question('Enter the device ID: ');
-streamSecurityEvents(deviceId);
-
-
-
-
-
-// Main menu function
-function menu() {
-  console.log("\n1. Adjust Temperature\n2. Get Room Temperatures\n3. Adjust Lighting Profile\n4. Stream Sensor Data to AC\n5. Exit");
-  const choice = parseInt(readlineSync.question('Enter your choice: '));
-
-  switch (choice) {
-    case 1:
-      adjustTemperature();
-      break;
-    case 2:
-      getRoomTemperatures();
-      break;
-    case 3:
-      setLighting();
-      break;
-    case 4:
-      const deviceId = readlineSync.question('Enter the device ID: ');
-      streamSecurityEvents(deviceId);
-      break;
-    case 5:
-      process.exit();
-      break;
-    default:
-      console.log("Invalid choice. Please enter a number between 1 and 5.");
-      menu();
-  }
-}
-
+// Start the menu
 menu();
