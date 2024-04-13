@@ -15,12 +15,11 @@ const lightingProtoPath = __dirname + "/protos/smart_lighting.proto";
 const lightingPackageDefinition = protoLoader.loadSync(lightingProtoPath);
 const smart_lighting = grpc.loadPackageDefinition(lightingPackageDefinition).lighting
 
-// Load Smart AC Protocol Buffer File
-const airconditioningProtoPath = __dirname + "/protos/smart_ac.proto";
+const securityProtoPath = __dirname + "/protos/smart_security.proto";
 
-//Load proto File
-const airconditioningPackageDefinition = protoloader.loadSync(airconditioningProtoPath);
-const smart_ac = grpc.loadPackageDefinition(airconditioningPackageDefinition).aircondition
+const securityPackageDefinition = protoLoader.loadSync(securityProtoPath);
+const smart_security = grpc.loadPackageDefinition(securityPackageDefinition).Smart_security;
+
 
 // Implement the gRPC service methods for smart heating
 const adjustTemperature = (call, callback) => {
@@ -30,12 +29,11 @@ const adjustTemperature = (call, callback) => {
     console.error('Invalid temperature value. Please enter a valid numeric value for the temperature in °C.');
     callback('Invalid temperature value', null); // Pass an error message to the callback
     return;
-}
+  }
 
   // Simulate adjusting temperature (for demonstration purposes)
   console.log(`Adjusting temperature to ${temperature}°C`);
   callback(null, { status: `Temperature adjusted successfully to ${temperature}°C` });
-
 };
 
 const getRoomTemperatures = (call) => {
@@ -80,6 +78,30 @@ const setLighting = (call, callback) => {
   });
 };
 
+const securityEventStreams = {}; // Object to store active event streams
+
+// Server-side code
+function streamSecurityEvents(call) {
+  // Extract the device ID from the call metadata
+  const deviceId = call.metadata.get('device-id')[0];
+
+  // Store the stream in the securityEventStreams object
+  securityEventStreams[deviceId] = call;
+
+  call.on('data', (securityEvent) => {
+    console.log(`Received security event from device ${deviceId}: ${securityEvent.eventType} - ${securityEvent.description}`);
+
+    // Simulate processing and generating an alert
+    const alert = {
+      deviceId: deviceId,
+      alertType: 'Intrusion Detected',
+      message: 'Potential security breach detected!',
+    };
+
+    // Send the alert back to the client
+    call.write(alert);
+  });
+}
 
 // Make a new gRPC server
 const server = new grpc.Server();
@@ -87,8 +109,10 @@ const server = new grpc.Server();
 // Add the service and implementations to the server
 server.addService(smart_heating.HeatingService.service, { adjustTemperature, getRoomTemperatures });
 server.addService(smart_lighting.LightingService.service, { setLighting });
+server.addService(smart_security.SecurityService.service, {StreamSecurityEvents: streamSecurityEvents,});
 
-//callback function for the bindAsync method to start the server after binding
+
+// Start the gRPC server
 server.bindAsync("0.0.0.0:40000", grpc.ServerCredentials.createInsecure(), () => {
   server.start();
 });

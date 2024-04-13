@@ -18,13 +18,11 @@ const smart_lighting = grpc.loadPackageDefinition(lightingPackageDefinition);
 // Extract the LightingService from the loaded package definition
 const LightingService = smart_lighting.lighting.LightingService;
 
-// Load the Protocol Buffer file for Smart AC
-const airconditioningProtoPath = __dirname + "/protos/smart_ac.proto";
-const airconditioningPackageDefinition = protoloader.loadSync(airconditioningProtoPath);
-const smart_ac = grpc.loadPackageDefinition(airconditioningPackageDefinition).aircondition
+const securityProtoPath = __dirname + "/protos/smart_security.proto";
+const packageDefinition = protoLoader.loadSync(securityProtoPath);
+const smart_security = grpc.loadPackageDefinition(packageDefinition);
 
-// Extract the AirconditioningService from the loaded package definition
-const SmartACService = smart_ac.aircondition.SmartACService;
+const SecurityService = smart_security.Smart_security.SecurityService;
 
 // Create a gRPC client for Smart Heating service
 const heatingClient = new HeatingService("localhost:40000", grpc.credentials.createInsecure());
@@ -32,34 +30,32 @@ const heatingClient = new HeatingService("localhost:40000", grpc.credentials.cre
 // Create a gRPC client for Smart Lighting service
 const lightingClient = new LightingService("localhost:40000", grpc.credentials.createInsecure());
 
+const client = new SecurityService('localhost:40000', grpc.credentials.createInsecure());
+
+
+// Define client-side functions
 function adjustTemperature() {
   const input = readlineSync.question('Enter the desired temperature in °C: ');
   const temperature = parseFloat(input);
 
-  // Validate the user input
   if (isNaN(temperature)) {
     console.error('Error: Invalid temperature value. Please enter a valid numeric value for the temperature in °C.');
-    menu(); // Show the menu again
+    menu();
     return;
   }
 
   const request = { temperature };
 
-  // Make the gRPC call to adjust temperature
   heatingClient.adjustTemperature(request, (error, response) => {
     if (error) {
-      console.error('Error:', error.message); // Handle remote error
+      console.error('Error:', error.message);
     } else {
       console.log('Status:', response.status);
     }
     menu();
   });
-
-  // Log the temperature adjustment before making the gRPC call
-  //console.log(`Adjusting temperature to ${temperature}°C`);
 }
 
-// Function to get room temperatures
 function getRoomTemperatures() {
   const call = heatingClient.getRoomTemperatures({});
   call.on('data', function(roomTemperature) {
@@ -74,7 +70,6 @@ function getRoomTemperatures() {
   });
 }
 
-// Function to set lighting profiles
 function setLighting() {
   const profileId = readlineSync.question('Enter the lighting profile ID: ');
   const brightnessLevel = parseFloat(readlineSync.question('Enter the desired brightness level: '));
@@ -83,22 +78,50 @@ function setLighting() {
     if (error) {
       console.error('Error:', error.message);
     } else {
-      console.log(`Status: Brightness set to ${response.status}, Lighting profile set to ${profileId}`); // Moved inside the callback function
-      menu();
+      console.log(`Status: Brightness set to ${response.status}, Lighting profile set to ${profileId}`);
     }
+    menu();
   });
 
-  // Send lighting profile data to the server
   call.write({ profileId, brightness: brightnessLevel });
-  call.end(); // End the stream
+  call.end();
 }
 
+function streamSecurityEvents() {
+  const deviceId = readlineSync.question('Enter the device ID: ');
+  const call = client.streamSecurityEvents();
 
+  call.on('data', (alert) => {
+    console.log(`Received security alert for device ${alert.deviceId}: ${alert.alertType} - ${alert.message}`);
+  });
+
+  let intervalId;
+
+  // Function to start sending security events
+  function startSendingEvents() {
+    intervalId = setInterval(() => {
+      const eventType = 'Motion Detected';
+      const description = 'Motion detected in the backyard';
+
+      const securityEvent = {
+        deviceId: deviceId,
+        eventType: eventType,
+        description: description,
+      };
+
+      console.log(`Sending security event from device ${deviceId}: ${eventType} - ${description}`);
+      call.write(securityEvent);
+    }, 3000);
+  }
+
+  // Start sending security events
+  startSendingEvents();
+}
 
 
 // Main menu function
 function menu() {
-  console.log("\n1. Adjust Temperature\n2. Get Room Temperatures\n3. Adjust Lighting Profile\n4. Exit");
+  console.log("\n1. Adjust Temperature\n2. Get Room Temperatures\n3. Adjust Lighting Profile\n4. Stream Sensor Data to AC\n5. Exit");
   const choice = parseInt(readlineSync.question('Enter your choice: '));
 
   switch (choice) {
@@ -112,13 +135,16 @@ function menu() {
       setLighting();
       break;
     case 4:
+      const deviceId = readlineSync.question('Enter the device ID: ');
+      streamSecurityEvents(deviceId);
+      break;
+    case 5:
       process.exit();
       break;
     default:
-      console.log("Invalid choice. Please enter a number between 1 and 4.");
+      console.log("Invalid choice. Please enter a number between 1 and 5.");
       menu();
   }
 }
 
-// Start the application by calling the menu function
 menu();

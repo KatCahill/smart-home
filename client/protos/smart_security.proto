@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package Smart_security;
+
+service SecurityService {
+  rpc StreamSecurityEvents(stream SecurityEvent) returns (stream SecurityAlert);
+}
+
+message SecurityEvent {
+  string deviceId = 1;
+  string eventType = 2;
+  string description = 3;
+
+}
+
+message SecurityAlert {
+  string deviceId = 1;
+  string alertType = 2;
+  string message = 3;
+
+}
