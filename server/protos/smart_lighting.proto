@@ -9,6 +9,7 @@ service LightingService {
 message LightingProfile {
   string profileId = 1;
   float brightness = 2;
+  float duration = 3; // New field for duration in minutes
 }
 
 message LightResponse {

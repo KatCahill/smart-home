@@ -53,17 +53,21 @@ const getRoomTemperatures = (call) => {
   });
 
   call.end(); // Close the stream
+  console.log("Temperature for living spaces sending to client")
 };
+
 
 // Implement the gRPC service methods for smart lighting
 const setLighting = (call, callback) => {
   let brightness = 0;
   let lightingProfile = ''; // Store lighting profile ID
+  let duration = 0; // Store duration of lighting profile usage
 
   call.on('data', (profile) => {
-    console.log(`Adjusting lighting profile ${profile.profileId} with brightness ${profile.brightness}`);
-    brightness = profile.brightness;
+    console.log(`Adjusting lighting profile ${profile.profileId} with brightness ${profile.brightness} for ${profile.duration} minutes`);
     lightingProfile = profile.profileId; // Update lighting profile ID
+    brightness = profile.brightness;
+    duration = profile.duration; // Update duration
   });
 
   call.on('error', (error) => {
@@ -73,22 +77,20 @@ const setLighting = (call, callback) => {
 
   call.on('end', () => {
     console.log('Client stream ended');
-    // Send response to client including lighting profile
-    callback(null, { status: brightness, profileId: lightingProfile });
+
+    // Send response to client including lighting profile and duration
+    callback(null, { profileId: lightingProfile, status: brightness, duration: duration });
   });
 };
 
-const securityEventStreams = {}; // Object to store active event streams
-
-// Server-side code
 function streamSecurityEvents(call) {
-  // Extract the device ID from the call metadata
-  const deviceId = call.metadata.get('device-id')[0];
-
-  // Store the stream in the securityEventStreams object
-  securityEventStreams[deviceId] = call;
+  let deviceId; // Define deviceId variable outside the event handler
 
   call.on('data', (securityEvent) => {
+    // Extract deviceId from the securityEvent
+    deviceId = securityEvent.deviceId;
+
+    // Log the received security event
     console.log(`Received security event from device ${deviceId}: ${securityEvent.eventType} - ${securityEvent.description}`);
 
     // Simulate processing and generating an alert
@@ -102,6 +104,7 @@ function streamSecurityEvents(call) {
     call.write(alert);
   });
 }
+
 
 // Make a new gRPC server
 const server = new grpc.Server();

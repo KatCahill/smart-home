@@ -72,33 +72,32 @@ function getRoomTemperatures() {
 
 function setLighting() {
   const profileId = readlineSync.question('Enter the lighting profile ID: ');
-  const brightnessLevel = parseFloat(readlineSync.question('Enter the desired brightness level: '));
+  const brightness = parseFloat(readlineSync.question('Enter the desired brightness level: '));
+  const duration = parseFloat(readlineSync.question('Enter the duration in minutes for which the lighting profile will be used: '));
 
   const call = lightingClient.setLighting((error, response) => {
     if (error) {
       console.error('Error:', error.message);
     } else {
-      console.log(`Status: Brightness set to ${response.status}, Lighting profile set to ${profileId}`);
+      console.log(`Status: Brightness set to ${response.status}, Lighting profile set to ${profileId}, Duration set to ${duration} minutes`);
     }
     menu();
   });
 
-  call.write({ profileId, brightness: brightnessLevel });
+  call.write({ profileId, brightness, duration});
   call.end();
 }
 
-function streamSecurityEvents() {
-  const deviceId = readlineSync.question('Enter the device ID: ');
+
+
+//client side code
+function streamSecurityEvents(deviceId) {
   const call = client.streamSecurityEvents();
-
-  call.on('data', (alert) => {
-    console.log(`Received security alert for device ${alert.deviceId}: ${alert.alertType} - ${alert.message}`);
-  });
-
   let intervalId;
 
   // Function to start sending security events
   function startSendingEvents() {
+
     intervalId = setInterval(() => {
       const eventType = 'Motion Detected';
       const description = 'Motion detected in the backyard';
@@ -114,9 +113,20 @@ function streamSecurityEvents() {
     }, 3000);
   }
 
+  call.on('data', (alert) => {
+    console.log(`Received security alert for device ${alert.deviceId}: ${alert.alertType} - ${alert.message}`);
+  });
+
   // Start sending security events
   startSendingEvents();
 }
+
+// Prompt the user to enter the device ID
+const deviceId = readlineSync.question('Enter the device ID: ');
+streamSecurityEvents(deviceId);
+
+
+
 
 
 // Main menu function
