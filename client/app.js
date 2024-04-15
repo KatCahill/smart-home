@@ -47,11 +47,11 @@ function adjustTemperature() {
 
   heatingClient.adjustTemperature(request, (error, response) => {
     if (error) {
-      console.error('Error:', error.message);
+      console.error('Error:', error.message); //Log error message received from the server
     } else {
-      console.log('Status:', response.status);
+      console.log('Status:', response.status); // log status returned by server
     }
-    menu();
+    menu(); //go back to the meny
   });
 }
 
@@ -160,9 +160,6 @@ function streamSecurityEvents(deviceId) {
 
     // Listen for the 'end' event from the client to stop streaming
     call.on('end', stopStreaming);
-
-
-
 
 }
 

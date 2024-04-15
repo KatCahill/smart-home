@@ -23,7 +23,8 @@ const smart_security = grpc.loadPackageDefinition(securityPackageDefinition).Sma
 
 // Implement the gRPC service methods for smart heating
 const adjustTemperature = (call, callback) => {
-  const temperature = call.request.temperature;
+  const temperature = call.request.temperature; // extracts temperature from the client.
+
   //error handling
   if (isNaN(temperature)) {
     console.error('Invalid temperature value. Please enter a valid numeric value for the temperature in °C.');
@@ -84,8 +85,7 @@ const setLighting = (call, callback) => {
 };
 
 
-
-
+// Function to stream security events
 function streamSecurityEvents(call) {
   let deviceId; // Define deviceId variable outside the event handler
 
@@ -106,7 +106,13 @@ function streamSecurityEvents(call) {
     // Send the alert back to the client
     call.write(alert);
   });
+
+  call.on('end', () => {
+    // Print a message when streaming has stopped
+    console.log('Client stream ended');
+  });
 }
+
 
 
 // Make a new gRPC server
