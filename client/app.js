@@ -22,7 +22,19 @@ const securityProtoPath = __dirname + "/protos/smart_security.proto";
 const packageDefinition = protoLoader.loadSync(securityProtoPath);
 const smart_security = grpc.loadPackageDefinition(packageDefinition);
 
+// Extract the SecurityService from the loaded package definition
 const SecurityService = smart_security.Smart_security.SecurityService;
+
+
+// Load the Protocol Buffer file for Smart Lighting
+var assistantProtoPath = __dirname + "/protos/smart_assistant.proto";
+var assistantPackageDefinition = protoLoader.loadSync(assistantProtoPath);
+var smart_assistant = grpc.loadPackageDefinition(assistantPackageDefinition);
+
+// Extract the SmartAssistantService from the loaded package definition
+const SmartAssistantService = smart_assistant.Assistant.SmartAssistantService;
+
+
 
 // Create a gRPC client for Smart Heating service
 const heatingClient = new HeatingService("localhost:40000", grpc.credentials.createInsecure());
@@ -30,7 +42,13 @@ const heatingClient = new HeatingService("localhost:40000", grpc.credentials.cre
 // Create a gRPC client for Smart Lighting service
 const lightingClient = new LightingService("localhost:40000", grpc.credentials.createInsecure());
 
+// Create a gRPC client for Security service
 const client = new SecurityService('localhost:40000', grpc.credentials.createInsecure());
+
+// Create a gRPC client for SmartAssistantServiceservice
+var assistantClient = new SmartAssistantService("0.0.0.0:40000", grpc.credentials.createInsecure());
+
+
 
 // Define client-side functions
 function adjustTemperature() {
@@ -70,8 +88,8 @@ function getRoomTemperatures() {
 }
 
 function setLighting() {
-  const profileId = readlineSync.question('Enter the lighting profile ID: ');
-  const brightness = parseFloat(readlineSync.question('Enter the desired brightness level: '));
+  const profileId = readlineSync.question('Enter the lighting profile ID (Daytime, Nightime, Bedtime): ');
+  const brightness = parseFloat(readlineSync.question('Enter the desired brightness level (1-20): '));
   const duration = parseFloat(readlineSync.question('Enter the duration in minutes for which the lighting profile will be used: '));
 
   const call = lightingClient.setLighting((error, response) => {
@@ -87,9 +105,10 @@ function setLighting() {
   call.end();
 }
 
-// Main menu function
+
+// Function to display the menu options
 async function menu() {
-  console.log("\n1. Adjust Temperature\n2. Get Room Temperatures\n3. Adjust Lighting Profile\n4. Stream Sensor Data to AC\n5. Exit");
+  console.log("\n1. Adjust Ambient Temperature\n2. Get Room Temperatures\n3. Adjust Lighting Profile\n4. Security Camera\n5. Start Conversation\n6. Exit");
   const choice = parseInt(readlineSync.question('Enter your choice: '));
 
   switch (choice) {
@@ -103,18 +122,22 @@ async function menu() {
       setLighting();
       break;
     case 4:
-      // Prompt the user to enter the device ID when choosing to stream security events
       const deviceId = readlineSync.question('Enter the device ID: ');
       streamSecurityEvents(deviceId);
       break;
     case 5:
+      // Start the conversation with the assistant
+      await converse();
+      break;
+    case 6:
       process.exit();
       break;
     default:
-      console.log("Invalid choice. Please enter a number between 1 and 5.");
+      console.log("Invalid choice. Please enter a number between 1 and 6.");
       await menu(); // Using await to wait for the asynchronous menu function call
   }
 }
+
 
 // Function to stream security events
 function streamSecurityEvents(deviceId) {
@@ -161,6 +184,53 @@ function streamSecurityEvents(deviceId) {
     // Listen for the 'end' event from the client to stop streaming
     call.on('end', stopStreaming);
 
+}
+
+
+// Function to start a conversation with the smart assistant
+async function converse() {
+  console.log("Starting conversation with Alexa.");
+
+  // Continuously prompt the user for input
+  while (true) {
+    // Prompt the user to enter a query
+    const query = readlineSync.question('You: ');
+
+    // If the user enters "exit", end the conversation
+    if (query.toLowerCase() === 'goodbye') {
+      console.log("Conversation with Alexa ended.");
+      // Return control back to the menu
+      menu();
+      return;
+    }
+
+    // Send the user query to the server and wait for the response
+    const response = await sendRequest(query);
+
+    // Print the response from the server
+    console.log("Alexa:", response);
+  }
+}
+
+// Function to send a request to alexa and receive the response
+function sendRequest(query) {
+  return new Promise((resolve, reject) => {
+    const responseStream = assistantClient.converse(); // Start the streaming call
+
+    // Send the user query to the server
+    responseStream.write({ message: query });
+
+    // Receive the response from the server
+    responseStream.on('data', (response) => {
+      // Resolve the promise with the response
+      resolve(response.message);
+    });
+
+    // Handle errors
+    responseStream.on('error', (error) => {
+      reject(error);
+    });
+  });
 }
 
 // Start the menu

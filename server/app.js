@@ -1,5 +1,27 @@
 const grpc = require('@grpc/grpc-js');
 const protoLoader = require('@grpc/proto-loader');
+const readline = require('readline');
+
+
+var{createServer} = require("http");
+var{ Server } = require("socket.io");
+
+var httpServer=createServer((req, res) =>{
+
+});
+
+var io = new Server(httpServer, {
+  cors:{
+    origin:'*',
+    methods: '*'
+  }
+});
+
+io.on("connection", function(socket){
+  console.log(`connect ${socket.id}`);
+});
+
+httpServer.listen(8080)
 
 // Load Smart Heating Protocol Buffer File
 const heatingProtoPath = __dirname + "/protos/smart_heating.proto";
@@ -11,30 +33,32 @@ const smart_heating = grpc.loadPackageDefinition(heatingPackageDefinition).heati
 // Load Smart Lighting Protocol Buffer File
 const lightingProtoPath = __dirname + "/protos/smart_lighting.proto";
 
-//load proto File
+//Load proto File
 const lightingPackageDefinition = protoLoader.loadSync(lightingProtoPath);
 const smart_lighting = grpc.loadPackageDefinition(lightingPackageDefinition).lighting
 
+// Load Smart Security Protocol Buffer File
 const securityProtoPath = __dirname + "/protos/smart_security.proto";
 
+//Load proto File
 const securityPackageDefinition = protoLoader.loadSync(securityProtoPath);
 const smart_security = grpc.loadPackageDefinition(securityPackageDefinition).Smart_security;
+
+// Load Smart Security Protocol Buffer File
+var assistantProtoPath = __dirname + "/protos/smart_assistant.proto";
+
+//Load proto File
+var assistantPackageDefinition= protoLoader.loadSync(assistantProtoPath);
+var smart_assistant= grpc.loadPackageDefinition(assistantPackageDefinition).Assistant;
 
 
 // Implement the gRPC service methods for smart heating
 const adjustTemperature = (call, callback) => {
-  const temperature = call.request.temperature; // extracts temperature from the client.
-
-  //error handling
-  if (isNaN(temperature)) {
-    console.error('Invalid temperature value. Please enter a valid numeric value for the temperature in °C.');
-    callback('Invalid temperature value', null); // Pass an error message to the callback
-    return;
-  }
+const temperature = call.request.temperature; // extracts temperature from the client.
 
   // Simulate adjusting temperature (for demonstration purposes)
-  console.log(`Adjusting temperature to ${temperature}°C`);
-  callback(null, { status: `Temperature adjusted successfully to ${temperature}°C` });
+  console.log(`Adjusting ambient temperature to ${temperature}°C`);
+  callback(null, { status: `Ambient temperature adjusted successfully to ${temperature}°C` });
 };
 
 const getRoomTemperatures = (call) => {
@@ -113,6 +137,44 @@ function streamSecurityEvents(call) {
   });
 }
 
+// Define the service methods for the SmartAssistant service
+const converse = (call) => {
+  call.on('data', (request) => {
+    const query = request.message;
+    console.log(`User query: ${query}`);
+
+    // Process the user's query and generate a response
+    let response;
+switch (query.toLowerCase()) {
+  case 'hello':
+    response = 'Good morning Katherine! How can I help you today?';
+    break;
+  case 'what is the date today':
+    response = new Date().toDateString();
+    break;
+  case 'what is the weather today':
+    // You can implement weather fetching logic here
+    response = 'The weather today is sunny with a high temperature of 27 degrees Celsius and a low temperature of 10 degrees Celsius.';
+    break;
+  case 'what is the time':
+    response = 'The current time is ' + new Date().toLocaleTimeString();
+    break;
+  default:
+    response = 'Sorry, I did not understand your query.';
+}
+
+    // Send the response to the client
+    call.write({ message: response });
+
+    // Print the response on the server side
+    console.log(`Alexa's response: ${response}`);
+  });
+
+  call.on('end', () => {
+    console.log('Client stream ended');
+    call.end();
+  });
+};
 
 
 // Make a new gRPC server
@@ -122,7 +184,7 @@ const server = new grpc.Server();
 server.addService(smart_heating.HeatingService.service, { adjustTemperature, getRoomTemperatures });
 server.addService(smart_lighting.LightingService.service, { setLighting });
 server.addService(smart_security.SecurityService.service, {StreamSecurityEvents: streamSecurityEvents,});
-
+server.addService(smart_assistant.SmartAssistantService.service, { converse });
 
 // Start the gRPC server
 server.bindAsync("0.0.0.0:40000", grpc.ServerCredentials.createInsecure(), () => {

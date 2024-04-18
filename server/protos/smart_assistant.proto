@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package Assistant;
+
+service SmartAssistantService {
+  // Bidirectional streaming RPC method
+  rpc converse(stream UserRequest) returns (stream AssistantResponse);
+}
+
+message UserRequest {
+  string message = 1;
+}
+
+message AssistantResponse {
+  string message = 1;
+}
