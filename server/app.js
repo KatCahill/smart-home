@@ -51,7 +51,7 @@ var assistantProtoPath = __dirname + "/protos/smart_assistant.proto";
 var assistantPackageDefinition= protoLoader.loadSync(assistantProtoPath);
 var smart_assistant= grpc.loadPackageDefinition(assistantPackageDefinition).Assistant;
 
-
+//SMART HEATING - ADJUST TEMPERATURE
 // Implement the gRPC service methods for smart heating
 const adjustTemperature = (call, callback) => {
 const temperature = call.request.temperature; // extracts temperature from the client.
@@ -61,27 +61,32 @@ const temperature = call.request.temperature; // extracts temperature from the c
   callback(null, { status: `Ambient temperature adjusted successfully to ${temperature}°C` });
 };
 
+
+//SMART HEATING - GET TEMPERATURE
 const getRoomTemperatures = (call) => {
   // Simulated room temperatures with room IDs
   const roomTemperatures = [
-    { roomId: 'Dining Room', temperature: 22.5 },
     { roomId: 'Bedroom 1', temperature: 20.3 },
     { roomId: 'Bedroom 2', temperature: 22.8 },
     { roomId: 'Bedroom 3', temperature: 23.6 },
+    { roomId: 'Dining Room', temperature: 22.5 },
     { roomId: 'Kitchen', temperature: 23.8 },
     { roomId: 'Sitting Room', temperature: 23.7}
   ];
 
+  // Sending room temperature to the client
   roomTemperatures.forEach(roomTemperature => {
     const message = { roomId: roomTemperature.roomId, temperature: roomTemperature.temperature };
     call.write(message); // Send each room temperature to the client
   });
 
   call.end(); // Close the stream
+  // Print message indicating that temperature data is being sent to client
   console.log("Temperature for living spaces sending to client")
 };
 
 
+//SMART LIGHTING
 // Implement the gRPC service methods for smart lighting
 const setLighting = (call, callback) => {
   let brightness = 0;
@@ -89,7 +94,6 @@ const setLighting = (call, callback) => {
   let duration = 0; // Store duration of lighting profile usage
 
   call.on('data', (profile) => {
-    console.log(`Adjusting lighting profile ${profile.profileId} with brightness ${profile.brightness} for ${profile.duration} minutes`);
     lightingProfile = profile.profileId; // Update lighting profile ID
     brightness = profile.brightness;
     duration = profile.duration; // Update duration
@@ -109,6 +113,7 @@ const setLighting = (call, callback) => {
 };
 
 
+//SMART SECURITY
 // Function to stream security events
 function streamSecurityEvents(call) {
   let deviceId; // Define deviceId variable outside the event handler
@@ -137,14 +142,16 @@ function streamSecurityEvents(call) {
   });
 }
 
+
+//SMART ASSISTANT
 // Define the service methods for the SmartAssistant service
 const converse = (call) => {
   call.on('data', (request) => {
     const query = request.message;
-    console.log(`User query: ${query}`);
+    console.log(`Katherine: ${query}`);
 
-    // Process the user's query and generate a response
-    let response;
+// Process the user's query and generate a response
+let response;
 switch (query.toLowerCase()) {
   case 'hello':
     response = 'Good morning Katherine! How can I help you today?';
@@ -153,12 +160,14 @@ switch (query.toLowerCase()) {
     response = new Date().toDateString();
     break;
   case 'what is the weather today':
-    // You can implement weather fetching logic here
     response = 'The weather today is sunny with a high temperature of 27 degrees Celsius and a low temperature of 10 degrees Celsius.';
     break;
   case 'what is the time':
     response = 'The current time is ' + new Date().toLocaleTimeString();
     break;
+  case 'turn on kitchen light':
+      response = 'Turning on Kitchen lights';
+      break;
   default:
     response = 'Sorry, I did not understand your query.';
 }

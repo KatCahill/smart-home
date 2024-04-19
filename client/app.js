@@ -35,7 +35,6 @@ var smart_assistant = grpc.loadPackageDefinition(assistantPackageDefinition);
 const SmartAssistantService = smart_assistant.Assistant.SmartAssistantService;
 
 
-
 // Create a gRPC client for Smart Heating service
 const heatingClient = new HeatingService("localhost:40000", grpc.credentials.createInsecure());
 
@@ -49,10 +48,10 @@ const client = new SecurityService('localhost:40000', grpc.credentials.createIns
 var assistantClient = new SmartAssistantService("0.0.0.0:40000", grpc.credentials.createInsecure());
 
 
-
+//SMART HEATING - ADJUST AMBIENT TEMPERATURE
 // Define client-side functions
 function adjustTemperature() {
-  const input = readlineSync.question('Enter the desired temperature in °C: ');
+  const input = readlineSync.question('Enter the desired ambient temperature in °C: ');
   const temperature = parseFloat(input);
 
   if (isNaN(temperature)) {
@@ -73,30 +72,49 @@ function adjustTemperature() {
   });
 }
 
+//SMART HEATING - GET TEMPERATURE
 function getRoomTemperatures() {
-  const call = heatingClient.getRoomTemperatures({});
-  call.on('data', function(roomTemperature) {
-    console.log(`Room: ${roomTemperature.roomId}, Temperature: ${roomTemperature.temperature}°C`);
-  });
-  call.on('error', function(error) {
-    console.error('Error:', error.message);
-  });
-  call.on('end', function() {
-    console.log('Server stream ended');
-    menu();
-  });
+  try {
+    //Establish a gRPC call to retrieve room temperatures
+    const call = heatingClient.getRoomTemperatures({});
+
+    // Handle data received from the server
+    call.on('data', function(roomTemperature) {
+      // Log toom temperature data received from the server
+      console.log(`Room: ${roomTemperature.roomId}, Temperature: ${roomTemperature.temperature}°C`);
+    });
+
+    //Handle errors that occur during the streaming process
+    call.on('error', function(error) {
+      //Log client-errors
+      console.error('Client Error:', error.message);
+    });
+
+    //Handle the end of the server stream
+    call.on('end', function() {
+      // Log that server stream has ended
+      console.log('Server stream ended');
+      menu();
+    });
+  } catch (error) {
+    // Catch any synchronous error that occur during the establishment of the gRPC call
+    console.error('Client Error:', error.message);
+  }
 }
 
+
+
+//SMART LIGHTING
 function setLighting() {
   const profileId = readlineSync.question('Enter the lighting profile ID (Daytime, Nightime, Bedtime): ');
   const brightness = parseFloat(readlineSync.question('Enter the desired brightness level (1-20): '));
-  const duration = parseFloat(readlineSync.question('Enter the duration in minutes for which the lighting profile will be used: '));
+  const duration = parseFloat(readlineSync.question('Enter the duration in hours for which the lighting profile will be used: '));
 
   const call = lightingClient.setLighting((error, response) => {
     if (error) {
       console.error('Error:', error.message);
     } else {
-      console.log(`Status: Brightness set to ${response.status}, Lighting profile set to ${profileId}, Duration set to ${duration} minutes`);
+      console.log(`Status: Lighting profile set to ${profileId}, Brightness set to ${response.status}, Duration set to ${duration} hours`);
     }
     menu();
   });
@@ -105,40 +123,7 @@ function setLighting() {
   call.end();
 }
 
-
-// Function to display the menu options
-async function menu() {
-  console.log("\n1. Adjust Ambient Temperature\n2. Get Room Temperatures\n3. Adjust Lighting Profile\n4. Security Camera\n5. Start Conversation\n6. Exit");
-  const choice = parseInt(readlineSync.question('Enter your choice: '));
-
-  switch (choice) {
-    case 1:
-      adjustTemperature();
-      break;
-    case 2:
-      getRoomTemperatures();
-      break;
-    case 3:
-      setLighting();
-      break;
-    case 4:
-      const deviceId = readlineSync.question('Enter the device ID: ');
-      streamSecurityEvents(deviceId);
-      break;
-    case 5:
-      // Start the conversation with the assistant
-      await converse();
-      break;
-    case 6:
-      process.exit();
-      break;
-    default:
-      console.log("Invalid choice. Please enter a number between 1 and 6.");
-      await menu(); // Using await to wait for the asynchronous menu function call
-  }
-}
-
-
+//SMART SECURITY
 // Function to stream security events
 function streamSecurityEvents(deviceId) {
   const call = client.streamSecurityEvents();
@@ -186,17 +171,17 @@ function streamSecurityEvents(deviceId) {
 
 }
 
-
+//SMART ASSISTANT
 // Function to start a conversation with the smart assistant
 async function converse() {
-  console.log("Starting conversation with Alexa.");
+  console.log("Starting conversation with Alexa...");
 
   // Continuously prompt the user for input
   while (true) {
     // Prompt the user to enter a query
     const query = readlineSync.question('You: ');
 
-    // If the user enters "exit", end the conversation
+    // If the user enters "goodbye", end the conversation
     if (query.toLowerCase() === 'goodbye') {
       console.log("Conversation with Alexa ended.");
       // Return control back to the menu
@@ -235,3 +220,35 @@ function sendRequest(query) {
 
 // Start the menu
 menu();
+
+// Function to display the menu options
+async function menu() {
+  console.log("\n1. Smart Heating - Adjust Temperature\n2. Smart Heating - Get Temperature\n3. Smart Lighting\n4. Smart Security\n5. Smart Assistant\n6. Exit");
+  const choice = parseInt(readlineSync.question('Enter your choice: '));
+
+  switch (choice) {
+    case 1:
+      adjustTemperature();
+      break;
+    case 2:
+      getRoomTemperatures();
+      break;
+    case 3:
+      setLighting();
+      break;
+    case 4:
+      const deviceId = readlineSync.question('Enter the device ID: ');
+      streamSecurityEvents(deviceId);
+      break;
+    case 5:
+      // Start the conversation with the assistant
+      await converse();
+      break;
+    case 6:
+      process.exit();
+      break;
+    default:
+      console.log("Invalid choice. Please enter a number between 1 and 6.");
+      await menu(); // Using await to wait for the asynchronous menu function call
+  }
+}
