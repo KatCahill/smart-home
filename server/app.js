@@ -6,7 +6,6 @@ const{createServer} = require("http");
 const{ Server } = require("socket.io");
 
 const httpServer=createServer((req, res) =>{
-
 });
 
 const io = new Server(httpServer, {
@@ -83,7 +82,6 @@ const getRoomTemperatures = (call) => {
   // Print message indicating that temperature data is being sent to client
   console.log("Temperature for living spaces sending to client")
 };
-
 
 //SMART LIGHTING
 const setLighting = (call, callback) => {
@@ -168,11 +166,12 @@ function streamSecurityEvents(call) {
   });
 }
 
-
 //SMART ASSISTANT
 // Define the service methods for the SmartAssistant service
 const converse = (call) => {
+  // Event handler for receiving data from the client
   call.on('data', (request) => {
+    //Extract the user's query from the received data
     const query = request.message;
     console.log(`Katherine: ${query}`);
 
@@ -205,6 +204,7 @@ switch (query.toLowerCase()) {
     console.log(`Alexa's response: ${response}`);
   });
 
+  // Event handler for when client stream ends
   call.on('end', () => {
     console.log('Client stream ended');
     call.end();

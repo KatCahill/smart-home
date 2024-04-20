@@ -51,16 +51,21 @@ const assistantClient = new SmartAssistantService("0.0.0.0:40000", grpc.credenti
 //SMART HEATING - ADJUST AMBIENT TEMPERATURE
 function adjustTemperature() {
   try {
+    // Prompt user to enter the desired ambient temperature in Celsius
     const input = readlineSync.question('Enter the desired ambient temperature in °C: ');
     const temperature = parseFloat(input);
 
+    // Validate if the input is a valid numeric value for the temperature
     if (isNaN(temperature)) {
       throw new Error('Invalid temperature value. Please enter a valid numeric value for the temperature in °C.');
     }
 
+    // Create a request object containing the temperature
     const request = { temperature };
 
+    // Call the adjustTemperature method of the heatingClient with the request
     heatingClient.adjustTemperature(request, (error, response) => {
+      // Handle the response or error received from the server
       if (error) {
         console.error('Error:', 'Failed to adjust temperature:', error.message); // Log error message received from the server
       } else {
@@ -107,11 +112,16 @@ function getRoomTemperatures() {
 // SMART LIGHTING
 function setLighting() {
   try {
+    // Prompt the user to enter the lighting profile ID
     const profileId = readlineSync.question('Enter the lighting profile ID (Daytime, Nighttime, Bedtime): ');
+    // Prompt the user to enter the desired brightness
     const brightness = parseFloat(readlineSync.question('Enter the desired brightness level (1-20): '));
+    // Prompt the user to enter the duration in hours
     const duration = parseFloat(readlineSync.question('Enter the duration in hours for which the lighting profile will be used: '));
 
+    // call the setLighting method of the lightingClient  with callback function
     const call = lightingClient.setLighting((error, response) => {
+      // Handle the response of error received from the server
       if (error) {
         console.error('Error:', 'Failed to set lighting profile:', error.message); // Log error message with custom error message
       } else {
@@ -120,6 +130,7 @@ function setLighting() {
       menu(); // Go back to the menu
     });
 
+    // Write the lighting profile information to the call and end the call
     call.write({ profileId, brightness, duration});
     call.end();
   } catch (error) {
@@ -127,7 +138,6 @@ function setLighting() {
     menu(); // Go back to the menu
   }
 }
-
 
 //SMART SECURITY
 // Function to stream security events
