@@ -87,16 +87,44 @@ const getRoomTemperatures = (call) => {
 
 
 //SMART LIGHTING
-// Implement the gRPC service methods for smart lighting
 const setLighting = (call, callback) => {
   let brightness = 0;
   let lightingProfile = ''; // Store lighting profile ID
   let duration = 0; // Store duration of lighting profile usage
 
   call.on('data', (profile) => {
-    lightingProfile = profile.profileId; // Update lighting profile ID
-    brightness = profile.brightness;
-    duration = profile.duration; // Update duration
+    console.log(`Adjusting lighting profile to ${profile.profileId}, with brightness set to ${profile.brightness} for ${profile.duration} hours`);
+
+    // Validate the profile ID
+    if (['daytime', 'nighttime', 'bedtime'].includes(profile.profileId.toLowerCase())) {
+      lightingProfile = profile.profileId; // Update lighting profile ID
+
+      // Validate the brightness value
+      if (profile.brightness >= 1 && profile.brightness <= 20) {
+        brightness = profile.brightness;
+      } else {
+        const error = new Error('Invalid brightness value. Please choose a value between 1 and 20.');
+        console.error('Error:', error.message);
+        callback(error);
+        return; // Stop processing if the brightness value is invalid
+      }
+
+      // Validate the duration value
+      if (profile.duration >= 1 && profile.duration <= 24) {
+        duration = profile.duration; // Update duration
+      } else {
+        const error = new Error('Invalid duration value. Please choose a value between 1 and 24 hours.');
+        console.error('Error:', error.message);
+        callback(error);
+        return; // Stop processing if the duration value is invalid
+      }
+    } else {
+      // If an invalid profile ID is received, send an error to the client
+      const error = new Error('Invalid lighting profile ID. Please choose from "daytime", "nighttime", or "bedtime".');
+      console.error('Error:', error.message);
+      callback(error);
+      return; // Stop processing if the profile ID is invalid
+    }
   });
 
   call.on('error', (error) => {
@@ -111,6 +139,7 @@ const setLighting = (call, callback) => {
     callback(null, { profileId: lightingProfile, status: brightness, duration: duration });
   });
 };
+
 
 
 //SMART SECURITY

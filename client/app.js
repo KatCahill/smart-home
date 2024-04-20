@@ -49,79 +49,85 @@ var assistantClient = new SmartAssistantService("0.0.0.0:40000", grpc.credential
 
 
 //SMART HEATING - ADJUST AMBIENT TEMPERATURE
-// Define client-side functions
 function adjustTemperature() {
-  const input = readlineSync.question('Enter the desired ambient temperature in °C: ');
-  const temperature = parseFloat(input);
+  try {
+    const input = readlineSync.question('Enter the desired ambient temperature in °C: ');
+    const temperature = parseFloat(input);
 
-  if (isNaN(temperature)) {
-    console.error('Error: Invalid temperature value. Please enter a valid numeric value for the temperature in °C.');
-    menu();
-    return;
-  }
-
-  const request = { temperature };
-
-  heatingClient.adjustTemperature(request, (error, response) => {
-    if (error) {
-      console.error('Error:', error.message); //Log error message received from the server
-    } else {
-      console.log('Status:', response.status); // log status returned by server
+    if (isNaN(temperature)) {
+      throw new Error('Invalid temperature value. Please enter a valid numeric value for the temperature in °C.');
     }
-    menu(); //go back to the meny
-  });
+
+    const request = { temperature };
+
+    heatingClient.adjustTemperature(request, (error, response) => {
+      if (error) {
+        console.error('Error:', 'Failed to adjust temperature:', error.message); // Log error message received from the server
+      } else {
+        console.log('Status:', response.status); // Log status returned by server
+      }
+      menu(); // Go back to the menu
+    });
+  } catch (error) {
+    console.error('Error:', 'Failed to adjust temperature:', error.message); // Log any caught error
+    menu(); // Go back to the menu
+  }
 }
 
-//SMART HEATING - GET TEMPERATURE
+// SMART HEATING - GET TEMPERATURE
 function getRoomTemperatures() {
   try {
-    //Establish a gRPC call to retrieve room temperatures
+    // Establish a gRPC call to retrieve room temperatures
     const call = heatingClient.getRoomTemperatures({});
 
     // Handle data received from the server
     call.on('data', function(roomTemperature) {
-      // Log toom temperature data received from the server
+      // Log room temperature data received from the server
       console.log(`Room: ${roomTemperature.roomId}, Temperature: ${roomTemperature.temperature}°C`);
     });
 
-    //Handle errors that occur during the streaming process
+    // Handle errors that occur during the streaming process
     call.on('error', function(error) {
-      //Log client-errors
-      console.error('Client Error:', error.message);
+      // Log client errors with a custom message
+      console.error('Client Error:', 'Failed to retrieve room temperatures:', error.message);
     });
 
-    //Handle the end of the server stream
+    // Handle the end of the server stream
     call.on('end', function() {
-      // Log that server stream has ended
+      // Log that the server stream has ended
       console.log('Server stream ended');
       menu();
     });
   } catch (error) {
-    // Catch any synchronous error that occur during the establishment of the gRPC call
-    console.error('Client Error:', error.message);
+    // Catch any synchronous errors that occur during the establishment of the gRPC call
+    console.error('Failed to establish connection:', error.message);
   }
 }
 
-
-
-//SMART LIGHTING
+// SMART LIGHTING
 function setLighting() {
-  const profileId = readlineSync.question('Enter the lighting profile ID (Daytime, Nightime, Bedtime): ');
-  const brightness = parseFloat(readlineSync.question('Enter the desired brightness level (1-20): '));
-  const duration = parseFloat(readlineSync.question('Enter the duration in hours for which the lighting profile will be used: '));
+  try {
+    const profileId = readlineSync.question('Enter the lighting profile ID (Daytime, Nighttime, Bedtime): ');
+    const brightness = parseFloat(readlineSync.question('Enter the desired brightness level (1-20): '));
+    const duration = parseFloat(readlineSync.question('Enter the duration in hours for which the lighting profile will be used: '));
 
-  const call = lightingClient.setLighting((error, response) => {
-    if (error) {
-      console.error('Error:', error.message);
-    } else {
-      console.log(`Status: Lighting profile set to ${profileId}, Brightness set to ${response.status}, Duration set to ${duration} hours`);
-    }
-    menu();
-  });
+    const call = lightingClient.setLighting((error, response) => {
+      if (error) {
+        console.error('Error:', 'Failed to set lighting profile:', error.message); // Log error message with custom error message
+      } else {
+        console.log(`Status: Lighting profile set to ${profileId}, Brightness set to ${response.status}, Duration set to ${duration} hours`);
+      }
+      menu(); // Go back to the menu
+    });
 
-  call.write({ profileId, brightness, duration});
-  call.end();
+    call.write({ profileId, brightness, duration});
+    call.end();
+  } catch (error) {
+    console.error('Error:', error.message); // Log any caught error
+    menu(); // Go back to the menu
+  }
 }
+
 
 //SMART SECURITY
 // Function to stream security events
@@ -212,9 +218,10 @@ function sendRequest(query) {
     });
 
     // Handle errors
-    responseStream.on('error', (error) => {
-      reject(error);
-    });
+  responseStream.on('error', (error) => {
+    reject(new Error('Error encountered while streaming response: ' + error.message));
+  });
+
   });
 }
 
