@@ -2,15 +2,14 @@ const grpc = require('@grpc/grpc-js');
 const protoLoader = require('@grpc/proto-loader');
 const readline = require('readline');
 
+const{createServer} = require("http");
+const{ Server } = require("socket.io");
 
-var{createServer} = require("http");
-var{ Server } = require("socket.io");
-
-var httpServer=createServer((req, res) =>{
+const httpServer=createServer((req, res) =>{
 
 });
 
-var io = new Server(httpServer, {
+const io = new Server(httpServer, {
   cors:{
     origin:'*',
     methods: '*'
@@ -45,11 +44,11 @@ const securityPackageDefinition = protoLoader.loadSync(securityProtoPath);
 const smart_security = grpc.loadPackageDefinition(securityPackageDefinition).Smart_security;
 
 // Load Smart Security Protocol Buffer File
-var assistantProtoPath = __dirname + "/protos/smart_assistant.proto";
+const assistantProtoPath = __dirname + "/protos/smart_assistant.proto";
 
 //Load proto File
-var assistantPackageDefinition= protoLoader.loadSync(assistantProtoPath);
-var smart_assistant= grpc.loadPackageDefinition(assistantPackageDefinition).Assistant;
+const assistantPackageDefinition= protoLoader.loadSync(assistantProtoPath);
+const smart_assistant= grpc.loadPackageDefinition(assistantPackageDefinition).Assistant;
 
 //SMART HEATING - ADJUST TEMPERATURE
 // Implement the gRPC service methods for smart heating
@@ -139,8 +138,6 @@ const setLighting = (call, callback) => {
     callback(null, { profileId: lightingProfile, status: brightness, duration: duration });
   });
 };
-
-
 
 //SMART SECURITY
 // Function to stream security events

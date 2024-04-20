@@ -27,9 +27,9 @@ const SecurityService = smart_security.Smart_security.SecurityService;
 
 
 // Load the Protocol Buffer file for Smart Lighting
-var assistantProtoPath = __dirname + "/protos/smart_assistant.proto";
-var assistantPackageDefinition = protoLoader.loadSync(assistantProtoPath);
-var smart_assistant = grpc.loadPackageDefinition(assistantPackageDefinition);
+const assistantProtoPath = __dirname + "/protos/smart_assistant.proto";
+const assistantPackageDefinition = protoLoader.loadSync(assistantProtoPath);
+const smart_assistant = grpc.loadPackageDefinition(assistantPackageDefinition);
 
 // Extract the SmartAssistantService from the loaded package definition
 const SmartAssistantService = smart_assistant.Assistant.SmartAssistantService;
@@ -45,7 +45,7 @@ const lightingClient = new LightingService("localhost:40000", grpc.credentials.c
 const client = new SecurityService('localhost:40000', grpc.credentials.createInsecure());
 
 // Create a gRPC client for SmartAssistantServiceservice
-var assistantClient = new SmartAssistantService("0.0.0.0:40000", grpc.credentials.createInsecure());
+const assistantClient = new SmartAssistantService("0.0.0.0:40000", grpc.credentials.createInsecure());
 
 
 //SMART HEATING - ADJUST AMBIENT TEMPERATURE
